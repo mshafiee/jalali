@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-
 package main
 
 import (
@@ -30,7 +29,6 @@ import (
 	"github.com/mshafiee/jalali"
 	"time"
 )
-
 
 func main() {
 	// Create a JalaliTime value for the current time
