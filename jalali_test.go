@@ -1051,11 +1051,11 @@ func TestRecurringEvent_Occurrences(t *testing.T) {
 			startDate: JalaliTime{2023, 3, 1, 0, 0, 0, 0, time.UTC},
 			endDate:   JalaliTime{2023, 3, 5, 0, 0, 0, 0, time.UTC},
 			expectedOccurrences: []JalaliTime{
-				JalaliTime{2023, 3, 1, 0, 0, 0, 0, time.UTC},
-				JalaliTime{2023, 3, 2, 0, 0, 0, 0, time.UTC},
-				JalaliTime{2023, 3, 3, 0, 0, 0, 0, time.UTC},
-				JalaliTime{2023, 3, 4, 0, 0, 0, 0, time.UTC},
-				JalaliTime{2023, 3, 5, 0, 0, 0, 0, time.UTC},
+				{2023, 3, 1, 0, 0, 0, 0, time.UTC},
+				{2023, 3, 2, 0, 0, 0, 0, time.UTC},
+				{2023, 3, 3, 0, 0, 0, 0, time.UTC},
+				{2023, 3, 4, 0, 0, 0, 0, time.UTC},
+				{2023, 3, 5, 0, 0, 0, 0, time.UTC},
 			},
 		},
 		// Add more test cases as needed
