@@ -1,5 +1,5 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/mshafiee/jalali.svg)](https://pkg.go.dev/github.com/mshafiee/jalali)
-![Coverage](https://img.shields.io/badge/Coverage-78.7%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-85.7%25-brightgreen)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mshafiee/jalali)](https://goreportcard.com/report/github.com/mshafiee/jalali)
 # Jalali
 Jalali is a Go package designed for working with the Persian calendar, also known as the Jalali calendar. This comprehensive library offers an easy-to-use API, allowing developers to efficiently convert dates between the Gregorian and Jalali calendars, perform date arithmetic, and format Jalali dates. The package is built to be compatible with Go's standard time package, ensuring seamless integration into any project requiring support for the Jalali calendar system. With its powerful set of tools, this package is an essential resource for applications that deal with the Persian (Jalali) calendar.
