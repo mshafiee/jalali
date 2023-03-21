@@ -118,3 +118,56 @@ fmt.Println(occurrence)
 
 }
 ```
+## List of functions
+```go
+func Date(year int, month Month, day, hour, min, sec, nsec int, loc *time.Location) JalaliTime
+func JalaliFromTime(t time.Time) JalaliTime
+func ToJalali(t time.Time) JalaliTime
+func ParseJalali(layout, value string) (JalaliTime, error)
+func Now() JalaliTime
+func Tehran() *time.Location
+func IRST() *time.Location
+func (w Weekday) String() string
+func (w Weekday) FaString() string
+func (m Month) String() string
+func (m Month) FaString() string
+func (j JalaliTime) Year() int
+func (j JalaliTime) Month() Month
+func (j JalaliTime) Day() int
+func (j JalaliTime) Hour() int
+func (j JalaliTime) Minute() int
+func (j JalaliTime) Second() int
+func (j JalaliTime) YearDay() int
+func (j JalaliTime) Weekday() Weekday
+func (j JalaliTime) DaysInMonth() int
+func (j JalaliTime) UTC() JalaliTime
+func (j JalaliTime) ToGregorian() time.Time
+func (j JalaliTime) ToTime() time.Time
+func (j JalaliTime) Local() JalaliTime
+func (j JalaliTime) In(loc *time.Location) JalaliTime
+func (j JalaliTime) Location() *time.Location
+func (j JalaliTime) Zone() (name string, offset int)
+func (j JalaliTime) Unix() int64
+func (j JalaliTime) UnixNano() int64
+func (j JalaliTime) Format(layout string) string
+func (j JalaliTime) FormatShort() string
+func (j JalaliTime) FormatLong() string
+func (j JalaliTime) String() string
+func (j JalaliTime) DaysBetween(u JalaliTime) int
+func (j JalaliTime) After(u JalaliTime) bool
+func (j JalaliTime) Before(t JalaliTime) bool
+func (j JalaliTime) Equal(other JalaliTime) bool
+func (j JalaliTime) IsZero() bool
+func (j JalaliTime) IsLeapJalaliYear() bool
+func (j JalaliTime) JulianDate() float64
+func (j JalaliTime) Add(d time.Duration) JalaliTime
+func (j JalaliTime) Sub(u JalaliTime) time.Duration
+func (j JalaliTime) AddYears(n int) JalaliTime
+func (j JalaliTime) AddMonths(n int) JalaliTime
+func (j JalaliTime) AddDays(n int) JalaliTime
+func (e RecurringEvent) Occurrences(startDate JalaliTime, endDate JalaliTime) []JalaliTime
+func (j JalaliTime) DaysUntil(targetDate JalaliTime) int
+func (j JalaliTime) AddDate(years int, months int, days int) JalaliTime
+func (j JalaliTime) AddJalaliDuration(d JalaliDuration) JalaliTime
+func (j JalaliTime) SubJalaliDuration(d JalaliDuration) JalaliTime
+```
