@@ -1035,7 +1035,6 @@ func TestJalaliTime_Sub(t *testing.T) {
 func TestRecurringEvent_Occurrences(t *testing.T) {
 	// Define test cases
 	testCases := []struct {
-		name                string
 		event               RecurringEvent
 		startDate           JalaliTime
 		endDate             JalaliTime
