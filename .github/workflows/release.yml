@@ -1,21 +1,20 @@
-name: Go Coverage Badge  # The name of the workflow that will appear on Github
+name: Go Coverage Badge
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest ]
-        go: [ 1.19.x, 1.20.x ]
+        go: [ 1.19.x, 1.23.x ]
     steps:
       - uses: actions/checkout@v2
 
@@ -24,17 +23,20 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
+      - name: Install Dependencies
+        run: go mod download
+
       - name: Build
-        run: go install
+        run: go install ./...
 
       - name: Test
         run: |
           go test -v -cover ./... -coverprofile coverage.out -coverpkg ./...
-          go tool cover -func coverage.out -o coverage.out  # Replaces coverage.out with the analysis of coverage.out
+          go tool cover -func coverage.out -o coverage.out
 
       - name: Go Coverage Badge
+        if: ${{ runner.os == 'Linux' && matrix.go == '1.23.x' }}
         uses: tj-actions/coverage-badge-go@v1
-        if: ${{ runner.os == 'Linux' && matrix.go == '1.20.x' }} # Runs this on only one of the ci builds.
         with:
           green: 80
           filename: coverage.out
@@ -55,5 +57,5 @@ jobs:
           branch: ${{ github.ref }}
 
       - name: Upload coverage reports to Codecov
-        if: ${{ runner.os == 'Linux' && matrix.go == '1.20.x' }} # Runs this on only one of the ci builds.
+        if: ${{ runner.os == 'Linux' && matrix.go == '1.23.x' }}
         uses: codecov/codecov-action@v3

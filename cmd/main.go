@@ -54,7 +54,7 @@ func main() {
 	layout := "%Y/%m/%d %H:%M:%S"
 	value := "1402/05/20 16:30:45"
 
-	jalaliTime, err := jalali.ParseJalali(layout, value)
+	jalaliTime, err := jalali.Parse(layout, value)
 	if err != nil {
 		fmt.Println("Error:", err)
 	} else {

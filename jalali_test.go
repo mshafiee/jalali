@@ -1115,7 +1115,7 @@ func TestJalaliFromTime(t *testing.T) {
 	}
 }
 
-func TestParseJalali(t *testing.T) {
+func TestParse(t *testing.T) {
 	type args struct {
 		layout string
 		value  string
@@ -1157,12 +1157,12 @@ func TestParseJalali(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseJalali(tt.args.layout, tt.args.value)
+			got, err := Parse(tt.args.layout, tt.args.value)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseJalali() got = %v, want %v", got, tt.want)
+				t.Errorf("Parse() got = %v, want %v", got, tt.want)
 			}
 			if (err == nil && tt.wantErr != nil) || (err != nil && err.Error() != tt.wantErr.Error()) {
-				t.Errorf("ParseJalali() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

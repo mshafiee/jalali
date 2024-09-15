@@ -31,6 +31,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -106,7 +107,7 @@ const (
 
 // String returns the English name of the weekday.
 func (w Weekday) String() string {
-	if int(w) < 0 || int(w) > len(FaWeekDays)-1 {
+	if int(w) < 0 || int(w) > len(EnWeekDays)-1 {
 		panic(fmt.Sprintf("invalid weekday value: %v", int(w)))
 	}
 	return EnWeekDays[w]
@@ -122,7 +123,7 @@ func (w Weekday) FaString() string {
 
 // String returns the English name of the month.
 func (m Month) String() string {
-	if int(m) < 1 || int(m) > len(FaJalaliMonthName)-1 {
+	if int(m) < 1 || int(m) > len(EnJalaliMonthName)-1 {
 		panic(fmt.Sprintf("invalid month value: %v", int(m)))
 	}
 	return EnJalaliMonthName[m]
@@ -145,7 +146,7 @@ type JalaliTime struct {
 	min   int            // Minute (0-59)
 	sec   int            // Second (0-59)
 	nsec  int            // Nanosecond (0-999999999)
-	loc   *time.Location // Time zone location
+	loc   *time.Location // JalaliTime zone location
 }
 
 // Year returns the year of the Jalali date.
@@ -274,14 +275,8 @@ func Now() JalaliTime {
 
 // UTC returns the JalaliTime in UTC time zone.
 func (j JalaliTime) UTC() JalaliTime {
-	// Convert the JalaliTime value to a time.Time value
-	t := j.ToGregorian()
-
-	// Set the location to UTC
-	t = t.UTC()
-
-	// Convert the resulting time.Time value to a JalaliTime value
-	return ToJalali(t)
+	gTime := j.ToGregorian().UTC()
+	return ToJalali(gTime)
 }
 
 // ToJalali converts a time.Time value to JalaliTime.
@@ -334,18 +329,15 @@ func (j JalaliTime) Local() JalaliTime {
 
 // In returns the JalaliTime in the specified time zone.
 func (j JalaliTime) In(loc *time.Location) JalaliTime {
-	// Convert the JalaliTime to a time.Time value
-	gTime := j.ToGregorian()
-
-	// Set the new time zone using the In() method
-	newGTime := gTime.In(loc)
-
-	// Convert the time.Time value back to a JalaliTime value
-	return ToJalali(newGTime)
+	gTime := j.ToGregorian().In(loc)
+	return ToJalali(gTime)
 }
 
 // Location returns the time zone of the JalaliTime.
 func (j JalaliTime) Location() *time.Location {
+	if j.loc == nil {
+		return time.Local
+	}
 	return j.loc
 }
 
@@ -385,84 +377,100 @@ func (j JalaliTime) UnixNano() int64 {
 	return utc.UnixNano()
 }
 
-// Format returns a string representing the time formatted according to the layout string.
-// The layout string is a string that specifies how to format the time. The following format
-// specifiers are recognized:
+// Format returns a string representing the Jalali time formatted according to the layout string.
+// The layout string uses format specifiers similar to strftime, starting with % followed by a letter.
+// Supported specifiers:
 //
-//	%Y: year as a decimal number with century
-//	%y: year as a decimal number without century (00-99)
-//	%m: month as a decimal number (01-12)
+//	%Y: year as a 4-digit number (e.g., 1402)
+//	%y: year as a 2-digit number (e.g., 02)
+//	%m: month as a 2-digit number (01-12)
 //	%B: full month name in Persian
-//	%d: day of the month as a decimal number (01-31)
+//	%b: abbreviated month name in Persian
+//	%d: day of the month as a 2-digit number (01-31)
+//	%H: hour (00-23)
+//	%M: minute (00-59)
+//	%S: second (00-59)
+//	%p: "AM" or "PM" in Persian ("صبح" or "عصر")
 //	%w: weekday name in Persian
-//	%n: newline character
 //	%z: time zone offset as ±hhmm
 //	%Z: time zone name
-//	%R: 24-hour time in the format "%H:%M"
+//	%R: 24-hour time in the format "HH:MM"
+//	%T: time in the format "HH:MM:SS"
 //	%%: percent sign
-//	%T: current time, equal to "%H:%M:%S"
-//	%p: "AM" or "PM" for 12-hour time formats
-//
-// All other characters in the layout string are treated as literal text and are not replaced.
-//
-// For example, the format string "%Y/%m/%d" would format the time as "1399/01/01".
 func (j JalaliTime) Format(layout string) string {
-	// Define the format specifiers and their corresponding values
-	specifiers := map[string]string{
-		"%Y": fmt.Sprintf("%04d", j.year),
-		"%y": fmt.Sprintf("%02d", j.year%100),
-		"%m": fmt.Sprintf("%02d", j.month),
-		"%B": FaJalaliMonthName[j.month],
-		"%d": fmt.Sprintf("%02d", j.day),
-		"%w": FaWeekDays[j.Weekday()],
-		"%n": "\n",
-		"%%": "%",
-		"%H": fmt.Sprintf("%02d", j.hour),
-		"%M": fmt.Sprintf("%02d", j.min),
-		"%S": fmt.Sprintf("%02d", j.sec),
-		"%Z": func() string {
-			if j.loc != nil {
-				return j.loc.String()
-			}
-			return ""
-		}(),
-		"%R": fmt.Sprintf("%02d:%02d", j.hour, j.min),
-		"%T": fmt.Sprintf("%02d:%02d:%02d", j.hour, j.min, j.sec),
-		"%p": func() string {
-			if j.hour < 12 {
-				return "صبح"
-			} else {
-				return "عصر"
-			}
-		}(),
-	}
+	var builder strings.Builder
+	length := len(layout)
+	i := 0
 
-	// Add support for the %z format specifier (time zone offset as ±hhmm)
-	_, offset := j.Zone()
-
-	sign := "+"
-	if offset < 0 {
-		sign = "-"
-		offset = -offset
-	}
-	specifiers["%z"] = fmt.Sprintf("%s%02d%02d", sign, offset/3600, (offset%3600)/60)
-
-	// Replace the format specifiers with their corresponding values
-	var output string
-	for i := 0; i < len(layout); i++ {
-		character := string(layout[i])
-		if character == "%" && i+1 < len(layout) {
-			specifier := "%" + string(layout[i+1])
-			if value, ok := specifiers[specifier]; ok {
-				output += value
-				i++ // Skip the next character
-				continue
+	for i < length {
+		if layout[i] == '%' && i+1 < length {
+			specifier := layout[i : i+2]
+			switch specifier {
+			case "%n":
+				builder.WriteByte('\n')
+			case "%%":
+				builder.WriteByte('%')
+			case "%Y":
+				builder.WriteString(fmt.Sprintf("%04d", j.year))
+			case "%y":
+				builder.WriteString(fmt.Sprintf("%02d", j.year%100))
+			case "%m":
+				builder.WriteString(fmt.Sprintf("%02d", j.month))
+			case "%B":
+				builder.WriteString(FaJalaliMonthName[j.month])
+			case "%b":
+				// Abbreviated month name, take first three characters
+				if len(FaJalaliMonthName[j.month]) >= 3 {
+					builder.WriteString(FaJalaliMonthName[j.month][:3])
+				} else {
+					builder.WriteString(FaJalaliMonthName[j.month])
+				}
+			case "%d":
+				builder.WriteString(fmt.Sprintf("%02d", j.day))
+			case "%H":
+				builder.WriteString(fmt.Sprintf("%02d", j.hour))
+			case "%M":
+				builder.WriteString(fmt.Sprintf("%02d", j.min))
+			case "%S":
+				builder.WriteString(fmt.Sprintf("%02d", j.sec))
+			case "%p":
+				if j.hour < 12 {
+					builder.WriteString("صبح") // AM in Persian
+				} else {
+					builder.WriteString("عصر") // PM in Persian
+				}
+			case "%w":
+				builder.WriteString(FaWeekDays[j.Weekday()])
+			case "%z":
+				_, offset := j.Zone()
+				sign := "+"
+				if offset < 0 {
+					sign = "-"
+					offset = -offset
+				}
+				hours := offset / 3600
+				minutes := (offset % 3600) / 60
+				builder.WriteString(fmt.Sprintf("%s%02d%02d", sign, hours, minutes))
+			case "%Z":
+				if j.loc != nil {
+					builder.WriteString(j.loc.String())
+				}
+			case "%R":
+				builder.WriteString(fmt.Sprintf("%02d:%02d", j.hour, j.min))
+			case "%T":
+				builder.WriteString(fmt.Sprintf("%02d:%02d:%02d", j.hour, j.min, j.sec))
+			default:
+				// Unknown specifier, write as-is
+				builder.WriteString(specifier)
 			}
+			i += 2
+		} else {
+			builder.WriteByte(layout[i])
+			i++
 		}
-		output += character
 	}
 
-	return output
+	return builder.String()
 }
 
 // FormatShort returns the JalaliTime formatted as a short string in the format "YYYY/MM/DD".
@@ -494,25 +502,26 @@ func (j JalaliTime) DaysBetween(u JalaliTime) int {
 	return days
 }
 
-// After reports whether the time instant j is after u.
+// After reports whether the time instant t is after u.
 func (j JalaliTime) After(u JalaliTime) bool {
 	return j.UnixNano() > u.UnixNano()
 }
 
-// Before reports whether the time instant j is before u.
-func (j JalaliTime) Before(t JalaliTime) bool {
-	return j.UnixNano() < t.UnixNano()
+// Before reports whether the time instant t is before u.
+func (j JalaliTime) Before(u JalaliTime) bool {
+	return j.UnixNano() < u.UnixNano()
 }
 
-// Equal returns true if the given JalaliTime value is equal to the receiver.
-func (j JalaliTime) Equal(other JalaliTime) bool {
-	return j.year == other.year &&
-		j.month == other.month &&
-		j.day == other.day &&
-		j.hour == other.hour &&
-		j.min == other.min &&
-		j.sec == other.sec &&
-		j.nsec == other.nsec
+// Equal reports whether t and u represent the same time instant.
+func (j JalaliTime) Equal(u JalaliTime) bool {
+	return j.year == u.year &&
+		j.month == u.month &&
+		j.day == u.day &&
+		j.hour == u.hour &&
+		j.min == u.min &&
+		j.sec == u.sec &&
+		j.nsec == u.nsec &&
+		j.loc.String() == u.loc.String()
 }
 
 // IsZero returns true if the JalaliTime value is equal to the zero value.
@@ -604,8 +613,8 @@ func (j JalaliTime) Add(d time.Duration) JalaliTime {
 // using the Sub method of time.Time.
 func (j JalaliTime) Sub(u JalaliTime) time.Duration {
 	// Convert both JalaliTime values to time.Time values
-	t1 := j.ToTime()
-	t2 := u.ToTime()
+	t1 := j.ToGregorian()
+	t2 := u.ToGregorian()
 
 	// Calculate the duration between the two time values
 	duration := t1.Sub(t2)
@@ -740,13 +749,13 @@ func (j JalaliTime) DaysUntil(targetDate JalaliTime) int {
 	return int(jd2 - jd1)
 }
 
-// ParseJalali function takes a layout and a value as input and returns a JalaliTime and an error.
+// ParseInLocation function takes a layout and a value as input and returns a JalaliTime and an error.
 // The layout parameter defines the format of the value parameter in a similar way to the standard
 // library's time.Parse function.
 // The function uses regular expressions to match the format defined by the layout and extract the relevant values.
 // It then validates the Jalali date and returns a JalaliTime object with the parsed values.
 // If the value cannot be parsed or the Jalali date is invalid, an error is returned.
-func ParseJalali(layout, value string) (JalaliTime, error) {
+func ParseInLocation(layout, value string, loc *time.Location) (JalaliTime, error) {
 	var year, month, day, hour, min, sec int
 
 	re := regexp.MustCompile(`%([YymdHMS])`)
@@ -780,8 +789,12 @@ func ParseJalali(layout, value string) (JalaliTime, error) {
 		min:   min,
 		sec:   sec,
 		nsec:  0,
-		loc:   time.Local,
+		loc:   loc,
 	}, nil
+}
+
+func Parse(layout, value string) (JalaliTime, error) {
+	return ParseInLocation(layout, value, time.Local)
 }
 
 // AddDate adds the specified years, months, and days to the JalaliTime object and returns the updated JalaliTime.
@@ -806,7 +819,7 @@ func JalaliFromTime(t time.Time) JalaliTime {
 	}
 }
 
-// Tehran returns the *time.Location representing the Iran Standard Time (IRST),
+// Tehran returns the *time.Location representing the Iran Standard JalaliTime (IRST),
 // which is the time zone used in Tehran, Iran.
 func Tehran() *time.Location {
 	loc, err := time.LoadLocation("Asia/Tehran")
@@ -816,7 +829,7 @@ func Tehran() *time.Location {
 	return loc
 }
 
-// IRST returns the *time.Location representing the Iran Standard Time (IRST)
+// IRST returns the *time.Location representing the Iran Standard JalaliTime (IRST)
 func IRST() *time.Location {
 	return Tehran()
 }
